@@ -1,6 +1,5 @@
 package lk.ijse.spring.repo;
 
-import lk.ijse.spring.entity.Item;
 import lk.ijse.spring.entity.Orders;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * 8:30 PM
  * 2023-10-09 - 10 - 2023
  */
-public interface PlaceOrderRepo extends JpaRepository<Orders,String> {
+public interface OrderDetailsRepo extends JpaRepository<Orders,String> {
 }
