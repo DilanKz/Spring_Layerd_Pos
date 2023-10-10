@@ -1,4 +1,3 @@
-/*
 let selectCusIds = $('#customerIds');
 let selectItemIds = $('#itemIds');
 let totalField = $('#maxTot');
@@ -18,22 +17,22 @@ loadItemOptionIds();
 loadAllOrders();
 
 function loadCustomerOptionIds() {
-    /!*selectCusIds.empty();
+    /*selectCusIds.empty();
     selectCusIds.append($('<option selected>Select_ID</option>'));
 
     for (let index in customerList) {
         let option = $('<option value="'+index+'"> '+customerList[index].cid+' </option>');
         selectCusIds.append(option);
-    }*!/
+    }*/
 
     $.ajax({
-        url: 'http://localhost:8080/Back_End_Web_exploded/customer',
+        url: baseURI+'customer',
         success: function (res) {
             selectCusIds.empty();
             selectCusIds.append($('<option selected>Select_ID</option>'));
 
-            for (let i = 0; i < res.length; i++) {
-                let option = $('<option>' + res[i].id + '</option>');
+            for (let i = 0; i < res.data.length; i++) {
+                let option = $('<option>' + res.data[i].id + '</option>');
                 selectCusIds.append(option);
             }
         },
@@ -46,13 +45,13 @@ function loadCustomerOptionIds() {
 function loadItemOptionIds() {
 
     $.ajax({
-        url: 'http://localhost:8080/Back_End_Web_exploded/item',
+        url: baseURI+'item',
         success: function (res) {
             selectItemIds.empty();
             selectItemIds.append($('<option selected>Select_ID</option>'));
 
-            for (let i = 0; i < res.length; i++) {
-                let option = $('<option>' + res[i].code + '</option>');
+            for (let i = 0; i < res.data.length; i++) {
+                let option = $('<option>' + res.data[i].code + '</option>');
                 selectItemIds.append(option);
             }
         },
@@ -61,17 +60,17 @@ function loadItemOptionIds() {
         }
     })
 
-    /!*selectItemIds.empty();
+    /*selectItemIds.empty();
     selectItemIds.append($('<option selected>Select_ID</option>'));
 
     for (let index in itemList) {
         let option = $('<option value="'+index+'"> '+itemList[index].iId+' </option>');
         selectItemIds.append(option);
-    }*!/
+    }*/
 }
 
 //Date formatter
-/!*
+/*
 let date=new Date();
 
 let fullDay = date.getDay();
@@ -80,16 +79,16 @@ let fullYear = date.getFullYear();
 
 let dateFormatter=`${fullDay}-${fullMonth}-${fullYear}`;
 
-$('#dtf').val(dateFormatter);*!/
+$('#dtf').val(dateFormatter);*/
 
-/!*function getTodayDate() {
+/*function getTodayDate() {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, "0");
     const day = String(today.getDate()).padStart(2, "0");
 
     $('#dtf').val(`${year}-${month}-${day}`);
-}*!/
+}*/
 
 function clearPoFields() {
     $('#itemIds option:contains("Select_ID")').prop('selected', true);
@@ -106,10 +105,15 @@ selectCusIds.click(function () {
         console.log(selectedCusID);
 
         $.ajax({
-            url: 'http://localhost:8080/Back_End_Web_exploded/placeOrder?option=customer&id=' + selectedCusID,
+            url: baseURI+'customer',
             success: function (res) {
-                selectedCustomerID = res.id;
-                $('#poCustomerName').val(res.name);
+                for (let i = 0; i < res.data.length; i++) {
+                    if (res.data[i].id===selectedCusID){
+                        console.log(res.data[i].name)
+                        $('#poCustomerName').val(res.data[i].name);
+                        selectedCustomerID=selectedCusID;
+                    }
+                }
             },
             error: function (error) {
                 console.log(error.status);
@@ -127,13 +131,19 @@ selectItemIds.click(function () {
         console.log(selectedItemID);
 
         $.ajax({
-            url: 'http://localhost:8080/Back_End_Web_exploded/placeOrder?option=items&id=' + selectedItemID,
+            url: baseURI+'item',
             method: "get",
             success: function (res) {
 
-                $('#poItemDesc').val(res.desc);
-                $('#poItemQtyOnHand').val(res.qty);
-                $('#poItemUP').val(res.price);
+                for (let i = 0; i < res.data.length; i++) {
+                    if (res.data[i].code===selectedItemID){
+                        $('#poItemDesc').val(res.data[i].description);
+                        $('#poItemQtyOnHand').val(res.data[i].qtyOnHand);
+                        $('#poItemUP').val(res.data[i].unitPrice);
+                    }
+                }
+
+
 
             },
             error: function (error) {
@@ -142,9 +152,9 @@ selectItemIds.click(function () {
         })
 
     }
-    /!*$('#poItemDesc').val(itemListElement.desc);
+    /*$('#poItemDesc').val(itemListElement.desc);
     $('#poItemQtyOnHand').val(itemListElement.qty);
-    $('#poItemUP').val(itemListElement.unitP);*!/
+    $('#poItemUP').val(itemListElement.unitP);*/
 
 });
 
@@ -185,10 +195,10 @@ function getAllCartData() {
 
         let cells = $(this).find('td');
 
-        rowData["id"] = $(cells[0]).text();
-        rowData["desc"] = $(cells[1]).text();
+        rowData["oid"]=$('#currentOrderID').val();
+        rowData["itemCode"] = $(cells[0]).text();
         rowData["qty"] = $(cells[2]).text();
-        rowData["up"] = $(cells[3]).text();
+        rowData["unitPrice"] = $(cells[3]).text();
 
         cartItems.push(rowData);
     });
@@ -202,20 +212,19 @@ $('#purchaseOrder').click(function () {
     let date = $('#dtf').val();
     getAllCartData();
     let order = {
-        orderID: orderID,
+        oid: orderID,
         date: date,
-        amount: total,
-        customer: selectedCustomerID,
-        details: cartItems
+        cusID: selectedCustomerID,
+        orderDetails: cartItems
     }
 
     $.ajax({
-        url: 'http://localhost:8080/Back_End_Web_exploded/placeOrder',
+        url: baseURI+'placeOrder',
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify(order),
         success: function (res) {
-            updateItems()
+            console.log(res)
         },
         error: function (error) {
             console.log(error.status);
@@ -225,7 +234,7 @@ $('#purchaseOrder').click(function () {
 });
 
 function updateItems() {
-    $.ajax({
+    /*$.ajax({
         url: 'http://localhost:8080/Back_End_Web_exploded/placeOrder',
         method: "PUT",
         contentType: "application/json",
@@ -236,7 +245,7 @@ function updateItems() {
         error: function (error) {
             console.log(error.status);
         }
-    })
+    })*/
 }
 
 
@@ -274,7 +283,7 @@ $('#dtf').val(getCurrentDate());
 let allOrders;
 
 function loadAllOrders() {
-    $.ajax({
+    /*$.ajax({
         url:'http://localhost:8080/Back_End_Web_exploded/placeOrder?option=orders',
         success:function (res) {
             //allOrderTable
@@ -291,7 +300,7 @@ function loadAllOrders() {
         error:function (error) {
             console.log(error.status);
         }
-    })
+    })*/
 }
 
 $('#searchBtn').click(function () {
@@ -346,4 +355,4 @@ function findIndexesByProperty(searchValue) {
     }
 
     return indexes;
-}*/
+}
